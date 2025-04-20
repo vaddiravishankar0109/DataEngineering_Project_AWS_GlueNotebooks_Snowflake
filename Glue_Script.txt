@@ -1,0 +1,72 @@
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+  
+sc = SparkContext.getOrCreate()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+s3_path = 's3://tollywood-api-data-extract-ravi/raw/to_processed/'
+source_dyf = glueContext.create_dynamic_frame_from_options(
+    connection_type="s3",
+    connection_options ={"paths": [s3_path]},
+    format="json"
+)
+# source_dyf.show()
+# toDF() will basically convert the entire JSON to dataframe 
+spotify_df = source_dyf.toDF()
+# spotify_df.show()
+from pyspark.sql.functions import explode, col
+spotify_df = spotify_df.withColumn("items", explode("items"))
+# spotify_df.show()
+# tollywood_album_df =spotify_df.select(col("items.track.album.id").alias("album_id") \
+#                  ,col("items.track.album.name").alias("album_name") \
+#                  ,col("items.track.album.release_date").alias("release_date") \
+#                  ,col("items.track.album.external_urls.spotify").alias("album_url") \
+#                  ,col("items.track.album.total_tracks").alias("album_total_tracks")).drop_duplicates(['album_id'])
+
+# tollywood_album_df.show()
+# tollywood_artist_df = spotify_df.select(explode(col("items.track.artists.id")).alias("artist_id") \
+#     ,explode(col("items.track.artists.name")).alias("artist_name") \
+#     ,explode(col("items.track.artists.external_urls.spotify")).alias("artist_url") \
+#     ,col("items.track.album.id").alias("artist_ablum_id")).drop_duplicates(['artist_id']).drop_duplicates(['artist_id'])
+
+# tollywood_artist_df.show()
+# Lets create an function for modular programming approach 
+def process_albums(df):
+    df = df.select(col("items.track.album.id").alias("album_id") \
+                 ,col("items.track.album.name").alias("album_name") \
+                 ,col("items.track.album.release_date").alias("release_date") \
+                 ,col("items.track.album.external_urls.spotify").alias("album_url") \
+                 ,col("items.track.album.total_tracks").alias("album_total_tracks")).drop_duplicates(['album_id'])
+    return df
+
+def process_artists(df):
+    df = df.select(explode(col("items.track.artists.id")).alias("artist_id") \
+    ,explode(col("items.track.artists.name")).alias("artist_name") \
+    ,explode(col("items.track.artists.external_urls.spotify")).alias("artist_url") \
+    ,col("items.track.album.id").alias("artist_ablum_id")).drop_duplicates(['artist_id']).drop_duplicates(['artist_id'])
+    
+    return df
+tollywood_album_df = process_albums(spotify_df)
+tollywood_album_df.show()
+tollywood_artist_df = process_artists(spotify_df)
+tollywood_artist_df.show()
+def write_to_s3(df, path_suffix, format_type="csv"):
+    # Convert back to DynamicFrame
+    dynamic_frame = DynamicFrame.fromDF(df, glueContext, "dynamic_frame")
+    
+    glueContext.write_dynamic_frame.from_options(
+        frame = dynamic_frame,
+        connection_type = "s3",
+        connection_options = {"path": f"s3://tollywood-api-data-extract-ravi/transformed/{path_suffix}/"},
+        format = format_type
+    )
+from datetime import datetime
+write_to_s3(tollywood_album_df, 'album_transformed/album_transformed_{}'.format(datetime.now()))
+write_to_s3(tollywood_artist_df, 'artist_transformed/artist_transformed_{}'.format(datetime.now()))
+job.commit()

@@ -1,0 +1,5 @@
+1. Create two tables on SnowflakeDB - tblAlbum, tblArtist
+2. Create Storage Stage to test connection with AWS
+3. Test copy command and Load Data
+4. Create 2 Snowpipe for individual folder
+5. Run complete pipeline to test it 
