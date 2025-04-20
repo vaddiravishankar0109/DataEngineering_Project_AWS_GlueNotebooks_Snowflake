@@ -1,7 +1,7 @@
 # **DataEngineering_Project_AWS_GlueNotebooks_Snowflake**
 
 ## **Overview**
-This project focuses on seamlessly integrating **AWS** and **Snowflake** for efficient data processing and analysis. The extraction process follows the approach used in [Data Engineering_Using_AWSLambda_Pandas_Crawler_Athena](https://github.com/vaddiravishankar0109/DataEngineering-Project-API-Pandas-AWS-lambda-Glue-Athena), with enhanced transformation and storage mechanisms.
+This project focuses on seamlessly integrating **AWS** and **Snowflake** for efficient data processing and analysis. The extraction process follows the approach used in [Data Engineering_Using_AWSLambda_Pandas_Crawler_Athena](https://github.com/vaddiravishankar0109/DataEngineering-Project-API-Pandas-AWS-lambda-Glue-Athena-), with enhanced transformation and storage mechanisms.
 
 ---
 
